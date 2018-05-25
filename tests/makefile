@@ -6,7 +6,7 @@ TARGETS = test
 
 all: test
 
-test: test.cpp qprint.hpp
+test: test.cpp ../qprint.hpp
 	clang++ $(CXXFLAGS) $< -o $@
 
 clean:
