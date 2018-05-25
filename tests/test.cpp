@@ -4,6 +4,7 @@
 
 #include "../qprint.hpp"
 
+using namespace qp;
 
 int main() {
 
@@ -22,5 +23,9 @@ int main() {
 
     std::unordered_map<char, int> map{{'a', 1}, {'b', 2}, {'c', 3}};
     qprint("{}\n", map);
+
+
+    std::unordered_map<char, std::vector<int>> m2{{'a', {1,2}}, {'b', {3,4}}, {'c', {5,6}}};
+    qprint("{}\n", m2);
 }
 

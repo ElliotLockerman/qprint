@@ -11,8 +11,13 @@
 #include <utility>
 
 
+
+namespace qp {
+
+
+//////////////////////////////////////////////////////////////////////////////////
 // Support
-namespace {
+//////////////////////////////////////////////////////////////////////////////////
 
 const char* qprint_delim = "{}";
 const size_t qprint_delim_len = strlen(qprint_delim);
@@ -50,19 +55,24 @@ template <typename T>
 using is_iterable = decltype(is_iterable_impl<T>(0));
 
 
+// put_to is a wrapper around "<<" that we specialize for pairs and ranges
+// we could overload "<<" directly, but we don't want to interfere with "user"
+//  overloads
 
+// these are needed to prevent strings from being iterated over
 static void put_to(std::ostream& os, std::string& v) { os << v; }
 static void put_to(std::ostream& os, const char* v) { os << v; }
 
-template<typename T1, typename T2>
-void put_to(std::ostream& os, std::pair<T1,T2>& v) { 
-    os << "(" << v.first << ", " << v.second << ")"; 
-}
-
+// regular case
 template<typename T>
 typename std::enable_if<is_iterable<T>::value != true, void>::type 
 put_to(std::ostream& os, T&& v) { os << v; }
 
+
+template<typename T1, typename T2>
+void put_to(std::ostream& os, std::pair<T1,T2>& v);
+
+// iterable case
 template<typename T>
 typename std::enable_if<is_iterable<T>::value, void>::type 
 put_to(std::ostream& os, T&& v) {
@@ -78,10 +88,21 @@ put_to(std::ostream& os, T&& v) {
     os << "}";
 }
 
+// pair case
+template<typename T1, typename T2>
+void put_to(std::ostream& os, std::pair<T1,T2>& v) { 
+    os << "(";
+    put_to(os, v.first);
+    os << ", ";
+    put_to(os, v.second);
+    os << ")";  
+}
 
 
 
-} // anon namespace
+
+
+
 
 
 
@@ -140,4 +161,5 @@ static inline void qerr(const std::string& s, Ts&&...vs) {
     qprint(std::cerr, std::forward<const std::string>(s), std::forward<Ts>(vs)...);
 }
 
+} // namespace qprint
 
