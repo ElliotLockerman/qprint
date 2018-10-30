@@ -34,13 +34,13 @@ static inline void print_range(std::ostream& os, const std::string& s, size_t st
 }
 
 
-// detect an iterable variable
+// detect an iterable type
 // https://stackoverflow.com/a/29634934
 using std::begin;
 using std::end;
 
 template <typename T>
-auto is_iterable_impl(int)
+auto constexpr is_iterable_impl(int)
 -> decltype (
     begin(std::declval<T&>()) != end(std::declval<T&>()), // begin/end and operator !=
     void(), // Handle evil operator ,
@@ -48,24 +48,34 @@ auto is_iterable_impl(int)
     void(*begin(std::declval<T&>())), // operator*
     std::true_type{});
 
-template <typename T>
-std::false_type is_iterable_impl(...);
+template<typename T>
+std::false_type constexpr is_iterable_impl(...);
 
 template <typename T>
 using is_iterable = decltype(is_iterable_impl<T>(0));
 
 
-// put_to is a wrapper around "<<" that we specialize for pairs and ranges
-// we could overload "<<" directly, but we don't want to interfere with "user"
-//  overloads
 
-// these are needed to prevent strings from being iterated over
-static void put_to(std::ostream& os, std::string& v) { os << v; }
-static void put_to(std::ostream& os, const char* v) { os << v; }
+// detect a printable type
+template<typename T>
+auto constexpr is_printable_impl(int)
+-> decltype(
+    std::declval<std::ostream&>() << std::declval<T>(),
+    std::true_type{});
+
+
+template<typename T>
+std::false_type constexpr is_printable_impl(...);
+
+template <typename T>
+using is_printable = decltype(is_printable_impl<T>(0));
+
+
+
 
 // regular case
 template<typename T>
-typename std::enable_if<is_iterable<T>::value != true, void>::type 
+typename std::enable_if<!is_iterable<T>::value || is_printable<T>::value, void>::type 
 put_to(std::ostream& os, T&& v) { os << v; }
 
 
@@ -74,7 +84,7 @@ void put_to(std::ostream& os, std::pair<T1,T2>& v);
 
 // iterable case
 template<typename T>
-typename std::enable_if<is_iterable<T>::value, void>::type 
+typename std::enable_if<is_iterable<T>::value && !is_printable<T>::value, void>::type 
 put_to(std::ostream& os, T&& v) {
     os << "{";
 
@@ -97,8 +107,6 @@ void put_to(std::ostream& os, std::pair<T1,T2>& v) {
     put_to(os, v.second);
     os << ")";  
 }
-
-
 
 
 
