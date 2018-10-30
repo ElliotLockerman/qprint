@@ -1,6 +1,7 @@
 
 #include <vector>
 #include <unordered_map>
+#include <cstdint>
 
 #include "../qprint.hpp"
 
@@ -11,6 +12,7 @@ int main() {
     qprint("");
     qprint("test a\n");
     qprint("ten: {}\n", 10);
+    qprint("hex: {x}\n", 10);
 
     int ten = 10;
     const char* twenty = "twenty";
