@@ -7,7 +7,7 @@ Uses `operator<<` internally, with built-in overloads for aggregates.
 
 Example:
 
-```
+```C++
 qprint("ten: {}\n", 10) # ten: 10
 qprint("ten: {x}\n", 10) # ten: 0xa
 
