@@ -22,5 +22,6 @@ More info coming soon.
 - String views instead of copying (where appropriate)
 - Command line option to format into stringstream before printing
 - More format options
+- Better testing
 
 
