@@ -20,47 +20,83 @@ const bool HEX_PREFIX = true;
 // Support
 //////////////////////////////////////////////////////////////////////////////////
 
-// I should make a string view class...
 
-// Helper to print a range of chracters to an ostream (so we don't have to substr
-//  and potentially make a copy)
-// npos is (size_t)-1, so if passed for len will print out untill end of string
-static inline void print_range(std::ostream& os, const std::string& s, size_t start, size_t len) {
-    assert(start <= s.size());
+class StringView {
+public:
 
-    for (size_t i = 0; i < len; ++i) {
-        if (start+i >= s.size()) { return; }
-        os << s[start+i];
-    }
-}
+    StringView(const char* str) : start(str), end(start + strlen(str)) {}
+    StringView(const std::string& str) : start(str.c_str()), 
+        end(start + str.size()) {}
 
-// start, len apply to lhs only
-static inline int compare_range(const std::string& lhs, size_t start, size_t len, const std::string& rhs) {
-    assert(start <= lhs.size());
 
-    for (size_t i = 0; i < len; ++i) {
-
-        // Got to the end -> equal
-        if (start+i == lhs.size() && i == rhs.size()) {
-            return 0;
-
-        // lhs finished first -> lhs is greater
-        } else if (start+i == lhs.size()) {
-            return 1;
-
-        // lhs finished first -> rhs is greater
-        } else if (i == rhs.size()) {
-            return -1;
-        } 
-
-        auto diff = lhs.at(start+i) - rhs.at(i);
-        if (diff != 0) {
-            return diff > 0 ? 1 : -1;
+    StringView(const char* str, size_t off, size_t len=npos) 
+    : start(str + off), end(start + len) {
+        if (len == npos) {
+            end = str + strlen(str);
+        } else {
+            assert(len <= strlen(start) - off);
         }
     }
 
-    return 0;
-}
+    StringView(const std::string& str, size_t off, size_t len=npos)
+    : start(str.c_str()+off), end(start + len) {
+        if (len == npos) {
+            end = str.c_str() + str.size();
+        } else {
+            assert(len <= str.size() - off);
+        }
+    }
+
+
+    StringView(const StringView&) = default;
+
+    StringView(const StringView sv, size_t off, size_t len=npos) {
+        *this = sv.substr(off, len);
+    }
+
+    StringView substr(size_t off, size_t len=npos) const {
+        assert(start + off + len <= end);
+        return StringView(start, off, len);
+    }
+
+    size_t size() const { return (size_t)(end - start); }
+
+    bool operator==(const StringView& rhs) const {
+        if (this->size() != rhs.size()) { return false; }
+        return strncmp(this->start, rhs.start, size()) == 0;
+    }
+
+    // I should write something more general, but this is enough for now...
+    size_t find(char ch, size_t off=0) const {
+        auto* p = start + off;
+        while (p != end) {
+            if (*p == ch) { return (size_t)(p - start); }
+            ++p;
+        }
+        return npos;
+    }
+
+    char operator[](size_t idx) const {
+        assert(start + idx < end);
+        return *(start + idx);
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const StringView& sv) {
+        auto* p = sv.start;
+        while (p != sv.end) {
+            os << *p;
+            ++p;
+        }
+
+        return os;
+    }
+
+    static const size_t npos = (size_t)-1;
+
+private:
+    const char* start = nullptr;
+    const char* end = nullptr;
+};
 
 
 
@@ -147,33 +183,34 @@ void put_to(std::ostream& os, std::pair<T1,T2>& v) {
 //////////////////////////////////////////////////////////////////////////////////
 
 // Base case: just print string s
-static inline void qformat_rec(std::stringstream& ss, const std::string&& s, size_t start) {
-    print_range(ss, s, start, std::string::npos);
-    assert(s.find('{', start) == std::string::npos && "More {}s than arguments");
+static inline void qformat_rec(std::stringstream& ss, const StringView s) {
+    ss << s;
+    assert(s.find('{') == std::string::npos && "More {}s than arguments");
 }
 
 // Recusive case: print first value and recurse
 template<typename T, typename... Ts>
-static inline void qformat_rec(std::stringstream& ss, const std::string&& s, size_t start, T&& v, Ts&&...vs) {
+static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v, Ts&&...vs) {
 
-    auto open = s.find('{', start);
-    assert(open != std::string::npos && "More arguments than {}s");
+    auto open = s.find('{');
+    assert(open != StringView::npos && "More arguments than {}s");
 
-    auto close = s.find('}', start+1);
-    assert(s.find("}") != std::string::npos);
+    auto close = s.find('}', open+1);
+    assert(close != std::string::npos);
 
+    auto format = s.substr(open+1, close-(open+1));
     bool hex = false;
     if (close - open > 1) {
-        hex = compare_range(s, open+1, close-open-1, "x") == 0;
+        hex = format == "x";
         if (!hex) {
             fprintf(stderr, "Unrecognized format string \"");
-            print_range(ss, s, open+1, close-open-1);
+            ss << format;
             fprintf(stderr, "\" at position %zu\n", open+1);
             assert(false);
         }
     }
 
-    print_range(ss, s, start, open-start);
+    ss << StringView(s, 0, open);
 
     if (hex) { 
         ss << std::hex; 
@@ -183,7 +220,7 @@ static inline void qformat_rec(std::stringstream& ss, const std::string&& s, siz
     if (hex) { ss << std::dec; }
 
 
-    qformat_rec(ss, std::forward<const std::string>(s), close+1, std::forward<Ts>(vs)...);
+    qformat_rec(ss, s.substr(close+1), std::forward<Ts>(vs)...);
 }
 
 
@@ -199,14 +236,14 @@ static inline void qformat_rec(std::stringstream& ss, const std::string&& s, siz
 template<typename... Ts>
 static inline std::string qformat(const std::string&& s, Ts&&...vs) {
     std::stringstream ss;
-    qformat_rec(ss, std::forward<const std::string>(s), 0, std::forward<Ts>(vs)...);
+    qformat_rec(ss, StringView(s), std::forward<Ts>(vs)...);
     return ss.str();
 }
 
 template<typename... Ts>
 static inline void qprint(std::ostream& os, const std::string&& s, Ts&&...vs) {
     std::stringstream ss;
-    qformat_rec(ss, std::forward<const std::string>(s), 0, std::forward<Ts>(vs)...);
+    qformat_rec(ss, StringView(s), std::forward<Ts>(vs)...);
     os << ss.str();
 }
 
