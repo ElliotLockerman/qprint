@@ -23,6 +23,7 @@ const bool HEX_PREFIX = true;
 
 class StringView {
 public:
+    StringView() = default;
 
     StringView(const char* str) : start(str), end(start + strlen(str)) {}
     StringView(const std::string& str) : start(str.c_str()), 
@@ -62,8 +63,36 @@ public:
     size_t size() const { return (size_t)(end - start); }
 
     bool operator==(const StringView& rhs) const {
-        if (this->size() != rhs.size()) { return false; }
-        return strncmp(this->start, rhs.start, size()) == 0;
+        return this->compare(rhs) == 0;
+    }
+
+    bool operator!=(const StringView& rhs) const {
+        return this->compare(rhs) != 0;
+    }
+
+    int compare(const StringView& rhs) const {
+        for (size_t i = 0; i <= size(); ++i) {
+
+            // Got to the end of both -> equal
+            if (i == this->size() && i == rhs.size()) {
+                return 0;
+
+            // lhs finished first -> lhs is greater
+            } else if (i == this->size()) {
+                return 1;
+
+            // lhs finished first -> rhs is greater
+            } else if (i == rhs.size()) {
+                return -1;
+            } 
+
+            auto diff = this->at(i) - rhs[i];
+            if (diff != 0) {
+                return diff;
+            }
+        }
+
+        assert(false && "Unreachable");
     }
 
     // I should write something more general, but this is enough for now...
@@ -81,6 +110,15 @@ public:
         return *(start + idx);
     }
 
+    char at(size_t idx) const { return (*this)[idx]; }
+
+    std::string str() const { return std::string(start, end); }
+
+
+    friend bool operator<(const StringView& lhs, const StringView& rhs) {
+        return lhs.compare(rhs) < 0;
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const StringView& sv) {
         auto* p = sv.start;
         while (p != sv.end) {
@@ -92,6 +130,7 @@ public:
     }
 
     static const size_t npos = (size_t)-1;
+
 
 private:
     const char* start = nullptr;
