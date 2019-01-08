@@ -59,23 +59,23 @@ private:
 #define qp_check_args(s, ...) static_assert(ConstStr(s).count_placeholders() == std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value, "Number of values does not match number of placeholders")
 
 #define qprint(s, ...) do { \
-    qp_check_args(s, __VA_ARGS__); \
-    qp::qprint(s, __VA_ARGS__); \
+    qp_check_args(s, ##__VA_ARGS__); \
+    qp::qprint(s, ##__VA_ARGS__); \
 } while(0)
 
 #define qerr(s, ...) do { \
-    qp_check_args(s, __VA_ARGS__); \
-    qp::qerr(s, __VA_ARGS__); \
+    qp_check_args(s, ##__VA_ARGS__); \
+    qp::qerr(s, ##__VA_ARGS__); \
 } while(0)
 
 #define qformat(s, ...) do { \
-    qp_check_args(s, __VA_ARGS__); \
-    qp::qformat(s, __VA_ARGS__); \
+    qp_check_args(s, ##__VA_ARGS__); \
+    qp::qformat(s, ##__VA_ARGS__); \
 } while(0)
 
 
 int main() {
-    qprint("test");
+    qprint("test\n");
     qprint("{} {}\n", 1, 2);
 }
 

@@ -2,7 +2,7 @@
 
 TARGETS = conststr
 
-CXXFLAGS = -std=c++11 -Wall -Wextra -Wpedantic
+CXXFLAGS = -std=c++11 -Wall -Wextra
 
 
 .PHONY: all clean
