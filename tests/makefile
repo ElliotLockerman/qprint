@@ -1,5 +1,5 @@
 
-CXXFLAGS = -Wall -pedantic -std=c++11 -Wunused-function
+CXXFLAGS = -Wall -std=c++11 -Wunused-function
 TARGETS = test
 
 .PHONY: test clean

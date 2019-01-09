@@ -139,6 +139,54 @@ private:
 
 
 
+// based on https://akrzemi1.wordpress.com/2011/05/11/parsing-strings-at-compile-time-part-i/
+class ConstStr {
+public:
+
+    template <unsigned long long N>
+    constexpr ConstStr(const char (&arr) [N]) : start(arr), thesize(N - 1) {
+        static_assert( N >= 1, "not a string literal");
+    }
+
+    constexpr char operator[](size_t i) const { 
+        return requires_inrange(i, thesize), start[i]; 
+    }
+
+    constexpr char at(size_t i) const { return (*this)[i]; }
+
+    constexpr unsigned size() const { return thesize; }
+
+    constexpr size_t count_placeholders(size_t i=0, size_t num=0, bool in=false) const {
+        return 
+            i == thesize
+                ? num 
+                : this->at(i) == '{'
+                    ? requires_true(!in), count_placeholders(i+1, num+1, true)
+                    : this->at(i) == '}' 
+                        ? requires_true(in), count_placeholders(i+1, num, false)
+                        : count_placeholders(i+1, num, in);
+            
+           
+    }
+
+    operator std::string() const { return std::string(start); }
+
+private:
+
+    const char* start = nullptr;
+    size_t thesize = -1;
+
+    static constexpr size_t requires_inrange(size_t i, size_t len) {
+        return i >= len ? throw std::out_of_range("") : i;
+    }
+
+    static constexpr bool requires_true(bool b) {
+        return b ? b : throw std::exception();
+    }
+
+};
+
+
 
 // detect an iterable type
 // https://stackoverflow.com/a/29634934
@@ -266,35 +314,64 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v,
 
 
 
-////////////////////////////////////////////////////////////////////////////////
-// qformat and specialization
-// uses qformat to print to an ostream, stdout, or stderr
-//////////////////////////////////////////////////////////////////////////////////
 
-// Public interface: same as recursive case, but creates ss and returns str
 template<typename... Ts>
-static inline std::string qformat(const std::string&& s, Ts&&...vs) {
+static inline std::string qformat_impl(const std::string&& s, Ts&&...vs) {
     std::stringstream ss;
     qformat_rec(ss, StringView(s), std::forward<Ts>(vs)...);
     return ss.str();
 }
 
 template<typename... Ts>
-static inline void qprint(std::ostream& os, const std::string&& s, Ts&&...vs) {
+static inline void qprint_os_impl(std::ostream& os, const std::string&& s, Ts&&...vs) {
     std::stringstream ss;
     qformat_rec(ss, StringView(s), std::forward<Ts>(vs)...);
     os << ss.str();
 }
 
 template<typename... Ts>
-static inline void qprint(const std::string& s, Ts&&...vs) {
-    qprint(std::cout, std::forward<const std::string>(s), std::forward<Ts>(vs)...);
+static inline void qprint_impl(const std::string& s, Ts&&...vs) {
+    qprint_os_impl(std::cout, std::forward<const std::string>(s), std::forward<Ts>(vs)...);
 }
 
 template<typename... Ts>
-static inline void qerr(const std::string& s, Ts&&...vs) {
-    qprint(std::cerr, std::forward<const std::string>(s), std::forward<Ts>(vs)...);
+static inline void qerr_impl(const std::string& s, Ts&&...vs) {
+    qprint_os_impl(std::cerr, std::forward<const std::string>(s), std::forward<Ts>(vs)...);
 }
 
-} // namespace qprint
+} // namespace qp
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////
+// qformat and specialization
+// uses qformat to print to an ostream, stdout, or stderr
+//////////////////////////////////////////////////////////////////////////////////
+
+// https://stackoverflow.com/a/33349105
+#define qp_check_args(s, ...) static_assert(qp::ConstStr(s).count_placeholders() == std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value, "Number of values does not match number of placeholders")
+
+#define qformat(s, ...) ({ \
+    qp_check_args(s, ##__VA_ARGS__); \
+    qp::qformat_impl(s, ##__VA_ARGS__); \
+})
+
+#define qprint_os(os, s, ...) ({ \
+    qp_check_args(s, ##__VA_ARGS__); \
+    qp::qprint_os_impl(os, s, ##__VA_ARGS__); \
+} while(0)
+
+#define qprint(s, ...) do { \
+    qp_check_args(s, ##__VA_ARGS__); \
+    qp::qprint_impl(s, ##__VA_ARGS__); \
+} while(0)
+
+#define qerr(s, ...) do { \
+    qp_check_args(s, ##__VA_ARGS__); \
+    qp::qerr_impl(s, ##__VA_ARGS__); \
+} while(0)
+
+
 

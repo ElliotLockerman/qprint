@@ -5,8 +5,6 @@
 
 #include "../qprint.hpp"
 
-using namespace qp;
-
 int main() {
 
     qprint("");
