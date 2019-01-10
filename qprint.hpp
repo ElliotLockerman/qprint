@@ -16,6 +16,8 @@ namespace qp {
 
 const bool SHOWBASE = true;
 
+const char PH_OPEN = '{';
+const char PH_CLOSE = '}';
 
 
 
@@ -164,9 +166,9 @@ public:
         return 
             i == thesize
                 ? num 
-                : this->at(i) == '{'
+                : this->at(i) == PH_OPEN
                     ? requires_true(!in), count_placeholders(i+1, num+1, true)
-                    : this->at(i) == '}' 
+                    : this->at(i) == PH_CLOSE 
                         ? requires_true(in), count_placeholders(i+1, num, false)
                         : count_placeholders(i+1, num, in);
             
@@ -282,7 +284,7 @@ void put_to(std::ostream& os, std::pair<T1,T2>& v) {
 // Base case: just print string s
 static inline void qformat_rec(std::stringstream& ss, const StringView s) {
     ss << s;
-    assert(s.find('{') == std::string::npos && "More {}s than arguments");
+    assert(s.find(PH_OPEN) == std::string::npos && "More placeholders than arguments");
 }
 
 
@@ -324,10 +326,10 @@ bool apply_format(std::stringstream& ss, const StringView& sv, std::ios& saved) 
 template<typename T, typename... Ts>
 static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v, Ts&&...vs) {
 
-    auto open = s.find('{');
-    assert(open != StringView::npos && "More arguments than {}s");
+    auto open = s.find(PH_OPEN);
+    assert(open != StringView::npos && "More arguments than placeholders");
 
-    auto close = s.find('}', open+1);
+    auto close = s.find(PH_CLOSE, open+1);
     assert(close != std::string::npos);
 
     auto format = s.substr(open+1, close-(open+1));
