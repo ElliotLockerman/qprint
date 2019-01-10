@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <cstdint>
 #include <iostream>
+#include <iomanip>
 
 #include "../qprint.hpp"
 
@@ -35,5 +36,7 @@ int main() {
     qprint("{}, {e}, {}\n", 20., 20., 20.);
     
     qprint("{}, {b}, {}\n", true, true, true);
+
+    qprint("{}{}\n", std::setw(20), 100);
 }
 
