@@ -18,7 +18,7 @@ const bool HEX_PREFIX = true;
 const bool OCT_PREFIX = true;
 
 //////////////////////////////////////////////////////////////////////////////////
-// Support
+// Helper Classes
 //////////////////////////////////////////////////////////////////////////////////
 
 
@@ -62,6 +62,7 @@ public:
     }
 
     size_t size() const { return (size_t)(end - start); }
+    bool empty() const { return size() == 0; }
 
     bool operator==(const StringView& rhs) const {
         return this->compare(rhs) == 0;
@@ -189,6 +190,12 @@ private:
 
 
 
+
+
+////////////////////////////////////////////////////////////////////////////////
+// Template Metaprogramming tools
+////////////////////////////////////////////////////////////////////////////////
+
 // detect an iterable type
 // https://stackoverflow.com/a/29634934
 using std::begin;
@@ -276,64 +283,40 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s) {
     assert(s.find('{') == std::string::npos && "More {}s than arguments");
 }
 
-enum class Fmt { NONE, HEX, OCT, FIXED, SCI, BOOL };
+// enum class Fmt { NONE, HEX, OCT, FIXED, SCI, BOOL };
 
-Fmt parse_format(const StringView& sv) {
-    if (sv.size() > 0) {
-        if (sv == "x") {
-            return Fmt::HEX;
+bool apply_format(std::stringstream& ss, const StringView& sv, std::ios& saved) {
 
-        } else if (sv == "o") {
-            return Fmt::OCT;
-
-        } else if (sv == "f") {
-            return Fmt::FIXED;
-
-        } else if (sv == "e") {
-            return Fmt::SCI;
-
-        } else if (sv == "b") {
-            return Fmt::BOOL;
-
-        } else {
-            fprintf(stderr, "Unrecognized format string \"");
-            // ss << format;
-            std::cerr << sv;
-            fprintf(stderr, "\"\n");
-            assert(false);
-        }
+    if (sv.empty()) {
+        return false;
     }
-    return Fmt::NONE;
+    saved.copyfmt(ss);
+
+    if (sv == "x") {
+        ss << std::hex; 
+        if (HEX_PREFIX) { ss << "0x"; }
+
+    } else if (sv == "o") {
+        ss << std::oct;
+        if (OCT_PREFIX) { ss << "0"; }
+
+    } else if (sv == "f") {
+        ss << std::fixed;
+
+    } else if (sv == "e") {
+        ss << std::scientific;
+
+    } else if (sv == "b") {
+        ss << std::boolalpha;
+
+    } else {
+        std::cerr << "Unrecognized format string \"" << sv << "\"\n";
+        assert(false);
+    }
+
+    return true;
 }
 
-void apply_format(std::stringstream& ss, Fmt fmt) {
-    switch (fmt) {
-        case Fmt::NONE:
-            break;
-
-        case Fmt::HEX:
-            ss << std::hex; 
-            if (HEX_PREFIX) { ss << "0x"; }
-            break;
-
-        case Fmt::OCT:
-            ss << std::oct;
-            if (OCT_PREFIX) { ss << "0"; }
-            break;
-
-        case Fmt::FIXED:
-            ss << std::fixed;
-            break;
-
-        case Fmt::BOOL:
-            ss << std::boolalpha;
-            break;
-
-        case Fmt::SCI:
-            ss << std::scientific;
-            break;
-    }
-}
 
 
 // Recusive case: print first value and recurse
@@ -347,17 +330,15 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v,
     assert(close != std::string::npos);
 
     auto format = s.substr(open+1, close-(open+1));
-    auto fmt = parse_format(format);
 
     ss << StringView(s, 0, open);
 
     std::ios old_state(nullptr);
-    if (fmt != Fmt::NONE) { old_state.copyfmt(ss); }
-    apply_format(ss, fmt);
+    bool did = apply_format(ss, format, old_state);
 
     put_to(ss, std::forward<T>(v));
 
-    if (fmt != Fmt::NONE) { ss.copyfmt(old_state); }
+    if (did) { ss.copyfmt(old_state); }
 
     qformat_rec(ss, s.substr(close+1), std::forward<Ts>(vs)...);
 }
