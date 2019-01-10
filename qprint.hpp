@@ -299,8 +299,7 @@ Fmt parse_format(const StringView& sv) {
     return Fmt::NONE;
 }
 
-void preprint(std::stringstream& ss, Fmt fmt) {
-
+void apply_format(std::stringstream& ss, Fmt fmt) {
     switch (fmt) {
         case Fmt::NONE:
             break;
@@ -320,24 +319,6 @@ void preprint(std::stringstream& ss, Fmt fmt) {
     }
 }
 
-void postprint(std::stringstream& ss, Fmt fmt) {
-    switch (fmt) {
-        case Fmt::NONE:
-            break;
-
-        case Fmt::HEX:
-            ss << std::dec; 
-            break;
-
-        case Fmt::FIXED:
-        case Fmt::SCI:
-            ss.unsetf(std::ios::fixed | std::ios::scientific);
-            break;
-    }
-
-}
-
-
 
 // Recusive case: print first value and recurse
 template<typename T, typename... Ts>
@@ -353,9 +334,14 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v,
     auto fmt = parse_format(format);
 
     ss << StringView(s, 0, open);
-    preprint(ss, fmt);
+
+    std::ios old_state(nullptr);
+    if (fmt != Fmt::NONE) { old_state.copyfmt(ss); }
+    apply_format(ss, fmt);
+
     put_to(ss, std::forward<T>(v));
-    postprint(ss, fmt);
+
+    if (fmt != Fmt::NONE) { ss.copyfmt(old_state); }
 
     qformat_rec(ss, s.substr(close+1), std::forward<Ts>(vs)...);
 }
