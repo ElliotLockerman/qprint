@@ -355,7 +355,7 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v,
     ss << StringView(s, 0, open);
     preprint(ss, fmt);
     put_to(ss, std::forward<T>(v));
-
+    postprint(ss, fmt);
 
     qformat_rec(ss, s.substr(close+1), std::forward<Ts>(vs)...);
 }
