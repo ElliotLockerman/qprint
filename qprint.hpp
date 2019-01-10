@@ -14,8 +14,10 @@
 namespace qp {
 
 
-const bool HEX_PREFIX = true;
-const bool OCT_PREFIX = true;
+const bool SHOWBASE = true;
+
+
+
 
 //////////////////////////////////////////////////////////////////////////////////
 // Helper Classes
@@ -283,7 +285,6 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s) {
     assert(s.find('{') == std::string::npos && "More {}s than arguments");
 }
 
-// enum class Fmt { NONE, HEX, OCT, FIXED, SCI, BOOL };
 
 bool apply_format(std::stringstream& ss, const StringView& sv, std::ios& saved) {
 
@@ -293,12 +294,12 @@ bool apply_format(std::stringstream& ss, const StringView& sv, std::ios& saved) 
     saved.copyfmt(ss);
 
     if (sv == "x") {
+        if (SHOWBASE) { ss << std::showbase; }
         ss << std::hex; 
-        if (HEX_PREFIX) { ss << "0x"; }
 
     } else if (sv == "o") {
+        if (SHOWBASE) { ss << std::showbase; }
         ss << std::oct;
-        if (OCT_PREFIX) { ss << "0"; }
 
     } else if (sv == "f") {
         ss << std::fixed;
