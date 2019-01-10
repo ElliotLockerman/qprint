@@ -385,7 +385,7 @@ static inline void qerr_impl(const std::string& s, Ts&&...vs) {
 // qformat and specialization
 // uses qformat to print to an ostream, stdout, or stderr
 //////////////////////////////////////////////////////////////////////////////////
-
+#if defined(__GNUC_) || defined(__clang__)
 // https://stackoverflow.com/a/33349105
 #define qp_check_args(s, ...) static_assert(qp::ConstStr(s).count_placeholders() == std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value, "Number of values does not match number of placeholders")
 
@@ -408,6 +408,23 @@ static inline void qerr_impl(const std::string& s, Ts&&...vs) {
     qp_check_args(s, ##__VA_ARGS__); \
     qp::qerr_impl(s, ##__VA_ARGS__); \
 } while(0)
+
+
+#else // defined(__GNUC_) || defined(__clang__)
+
+#define qformat(...) qp::qformat_impl(__VA_ARGS__)
+
+#define qprint_os(...) qp::qprint_os_impl(__VA_ARGS__)
+
+#define qprint(...) qp::qprint_impl(__VA_ARGS__)
+
+#define qerr(...) qp::qerr_impl(s, __VA_ARGS__)
+
+#endif // defined(__GNUC_) || defined(__clang__)
+
+
+
+
 
 
 

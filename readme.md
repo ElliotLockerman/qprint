@@ -1,7 +1,7 @@
 
 # QPrint
 
-A simple header-only C++ printing library inspired by Python's `str.format`.
+A simple header-only C++11 printing library inspired by Python's `str.format`.
 
 Uses `operator<<` internally, with built-in overloads for aggregates.
 
