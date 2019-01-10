@@ -276,7 +276,7 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s) {
     assert(s.find('{') == std::string::npos && "More {}s than arguments");
 }
 
-enum class Fmt { NONE, HEX, OCT, FIXED, SCI };
+enum class Fmt { NONE, HEX, OCT, FIXED, SCI, BOOL };
 
 Fmt parse_format(const StringView& sv) {
     if (sv.size() > 0) {
@@ -291,6 +291,9 @@ Fmt parse_format(const StringView& sv) {
 
         } else if (sv == "e") {
             return Fmt::SCI;
+
+        } else if (sv == "b") {
+            return Fmt::BOOL;
 
         } else {
             fprintf(stderr, "Unrecognized format string \"");
@@ -320,6 +323,10 @@ void apply_format(std::stringstream& ss, Fmt fmt) {
 
         case Fmt::FIXED:
             ss << std::fixed;
+            break;
+
+        case Fmt::BOOL:
+            ss << std::boolalpha;
             break;
 
         case Fmt::SCI:
