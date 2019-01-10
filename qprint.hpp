@@ -15,6 +15,7 @@ namespace qp {
 
 
 const bool HEX_PREFIX = true;
+const bool OCT_PREFIX = true;
 
 //////////////////////////////////////////////////////////////////////////////////
 // Support
@@ -275,12 +276,15 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s) {
     assert(s.find('{') == std::string::npos && "More {}s than arguments");
 }
 
-enum class Fmt { NONE, HEX, FIXED, SCI };
+enum class Fmt { NONE, HEX, OCT, FIXED, SCI };
 
 Fmt parse_format(const StringView& sv) {
     if (sv.size() > 0) {
         if (sv == "x") {
-            return Fmt::FIXED;
+            return Fmt::HEX;
+
+        } else if (sv == "o") {
+            return Fmt::OCT;
 
         } else if (sv == "f") {
             return Fmt::FIXED;
@@ -307,6 +311,11 @@ void apply_format(std::stringstream& ss, Fmt fmt) {
         case Fmt::HEX:
             ss << std::hex; 
             if (HEX_PREFIX) { ss << "0x"; }
+            break;
+
+        case Fmt::OCT:
+            ss << std::oct;
+            if (OCT_PREFIX) { ss << "0"; }
             break;
 
         case Fmt::FIXED:
