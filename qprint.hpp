@@ -275,6 +275,70 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s) {
     assert(s.find('{') == std::string::npos && "More {}s than arguments");
 }
 
+enum class Fmt { NONE, HEX, FIXED, SCI };
+
+Fmt parse_format(const StringView& sv) {
+    if (sv.size() > 0) {
+        if (sv == "x") {
+            return Fmt::FIXED;
+
+        } else if (sv == "f") {
+            return Fmt::FIXED;
+
+        } else if (sv == "e") {
+            return Fmt::SCI;
+
+        } else {
+            fprintf(stderr, "Unrecognized format string \"");
+            // ss << format;
+            std::cerr << sv;
+            fprintf(stderr, "\"\n");
+            assert(false);
+        }
+    }
+    return Fmt::NONE;
+}
+
+void preprint(std::stringstream& ss, Fmt fmt) {
+
+    switch (fmt) {
+        case Fmt::NONE:
+            break;
+
+        case Fmt::HEX:
+            ss << std::hex; 
+            if (HEX_PREFIX) { ss << "0x"; }
+            break;
+
+        case Fmt::FIXED:
+            ss << std::fixed;
+            break;
+
+        case Fmt::SCI:
+            ss << std::scientific;
+            break;
+    }
+}
+
+void postprint(std::stringstream& ss, Fmt fmt) {
+    switch (fmt) {
+        case Fmt::NONE:
+            break;
+
+        case Fmt::HEX:
+            ss << std::dec; 
+            break;
+
+        case Fmt::FIXED:
+        case Fmt::SCI:
+            ss.unsetf(std::ios::fixed | std::ios::scientific);
+            break;
+    }
+
+}
+
+
+
 // Recusive case: print first value and recurse
 template<typename T, typename... Ts>
 static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v, Ts&&...vs) {
@@ -286,25 +350,11 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s, T&& v,
     assert(close != std::string::npos);
 
     auto format = s.substr(open+1, close-(open+1));
-    bool hex = false;
-    if (close - open > 1) {
-        hex = format == "x";
-        if (!hex) {
-            fprintf(stderr, "Unrecognized format string \"");
-            ss << format;
-            fprintf(stderr, "\" at position %zu\n", open+1);
-            assert(false);
-        }
-    }
+    auto fmt = parse_format(format);
 
     ss << StringView(s, 0, open);
-
-    if (hex) { 
-        ss << std::hex; 
-        if (HEX_PREFIX) { ss << "0x"; }
-    }
+    preprint(ss, fmt);
     put_to(ss, std::forward<T>(v));
-    if (hex) { ss << std::dec; }
 
 
     qformat_rec(ss, s.substr(close+1), std::forward<Ts>(vs)...);

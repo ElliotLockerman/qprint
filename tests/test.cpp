@@ -2,6 +2,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
+#include <iostream>
 
 #include "../qprint.hpp"
 
@@ -28,5 +29,12 @@ int main() {
     std::unordered_map<char, std::vector<int>> m2{{'a', {1,2}}, {'b', {3,4}}, {'c', {5,6}}};
     qprint("{}\n", m2);
 
+    qprint("{}\n", 1000000000000.);
+    qprint("{f}\n", 1000000000000.);
+    qprint("{}\n", 1000000000000.);
+    
+    qprint("{}\n", 20.);
+    qprint("{e}\n", 20.);
+    qprint("{}\n", 20.);
 }
 
