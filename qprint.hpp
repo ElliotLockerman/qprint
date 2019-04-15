@@ -40,7 +40,7 @@ public:
         if (len == npos) {
             end = str + strlen(str);
         } else {
-            assert(len <= strlen(start) - off);
+            assert(len <= strlen(str) - off);
         }
     }
 
@@ -288,7 +288,7 @@ static inline void qformat_rec(std::stringstream& ss, const StringView s) {
 }
 
 
-bool apply_format(std::stringstream& ss, const StringView& sv, std::ios& saved) {
+static inline bool apply_format(std::stringstream& ss, const StringView& sv, std::ios& saved) {
 
     if (sv.empty()) {
         return false;
@@ -385,7 +385,8 @@ static inline void qerr_impl(const std::string& s, Ts&&...vs) {
 // qformat and specialization
 // uses qformat to print to an ostream, stdout, or stderr
 //////////////////////////////////////////////////////////////////////////////////
-#if defined(__GNUC_) || defined(__clang__)
+#if defined(__GNUC__) || defined(__clang__)
+
 // https://stackoverflow.com/a/33349105
 #define qp_check_args(s, ...) static_assert(qp::ConstStr(s).count_placeholders() == std::tuple_size<decltype(std::make_tuple(__VA_ARGS__))>::value, "Number of values does not match number of placeholders")
 
@@ -394,7 +395,7 @@ static inline void qerr_impl(const std::string& s, Ts&&...vs) {
     qp::qformat_impl(s, ##__VA_ARGS__); \
 })
 
-#define qprint_os(os, s, ...) ({ \
+#define qprint_os(os, s, ...) { \
     qp_check_args(s, ##__VA_ARGS__); \
     qp::qprint_os_impl(os, s, ##__VA_ARGS__); \
 } while(0)
@@ -418,7 +419,7 @@ static inline void qerr_impl(const std::string& s, Ts&&...vs) {
 
 #define qprint(...) qp::qprint_impl(__VA_ARGS__)
 
-#define qerr(...) qp::qerr_impl(s, __VA_ARGS__)
+#define qerr(...) qp::qerr_impl(__VA_ARGS__)
 
 #endif // defined(__GNUC_) || defined(__clang__)
 

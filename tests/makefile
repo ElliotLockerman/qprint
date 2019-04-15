@@ -1,14 +1,14 @@
 
-CXXFLAGS = -Wall -std=c++11 -Wunused-function
 TARGETS = test
+CXXFLAGS = -Wall -std=c++11 -Wunused-function
 
-.PHONY: test clean
+.PHONY: all clean
 
-all: test
+all: $(TARGETS)
 
-test: test.cpp ../qprint.hpp
-	clang++ $(CXXFLAGS) $< -o $@
+$(TARGETS): %: %.cpp ../qprint.hpp
+	$(CXX) $(CXXFLAGS) $< -o $@
 
 clean:
-	rm -rf test
+	@rm -f test 2>/dev/null || true
 

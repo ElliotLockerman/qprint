@@ -20,6 +20,7 @@ int main() {
     auto str = qformat("ten: {}, twenty: {}\n", ten, twenty);
     qprint("{}", str);
     qprint("{}", "string literal\n");
+    qprint("Brackets: {} inside {}\n", '{', '}');
 
     std::vector<int> v{1,2,3,4};
     qprint("{}\n", v);
