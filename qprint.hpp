@@ -9,6 +9,7 @@
 #include <cstring>
 #include <iterator>
 #include <utility>
+#include <tuple>
 
 
 namespace qp {
@@ -255,10 +256,14 @@ put_to(std::ostream& os, T&& v) {
     os << "{";
 
     auto it = std::begin(v);
-    if (it != std::end(v)) { put_to(os, *it); }
-    while (++it != std::end(v)) { 
+    if (it != std::end(v)) { 
+        put_to(os, *it); 
+        ++it;
+    }
+    while (it != std::end(v)) { 
         os << ", "; 
         put_to(os, *it);
+        ++it;
     }
 
     os << "}";

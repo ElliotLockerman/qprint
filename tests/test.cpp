@@ -25,6 +25,9 @@ int main() {
     std::vector<int> v{1,2,3,4};
     qprint("{}\n", v);
 
+    std::vector<int> empty;
+    qprint("{}\n", empty);
+
     std::unordered_map<char, int> map{{'a', 1}, {'b', 2}, {'c', 3}};
     qprint("{}\n", map);
 
